@@ -1,0 +1,2 @@
+y = 0.126265x + 2.02628
+Chi-squared value: 2949.25, chi-squared/NDOF value: 128.228
