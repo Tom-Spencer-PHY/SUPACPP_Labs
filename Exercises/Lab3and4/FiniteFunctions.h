@@ -18,6 +18,7 @@ public:
   std::vector< std::pair<double,double> > scanFunction(int Nscan = 1000); //Scan over function to plot it (slight hack needed to plot function in gnuplot)
   void setRangeMin(double RMin);
   void setRangeMax(double RMax);
+  void setFunctionName(std::string functionName);
   void setOutfile(std::string outfile);
   void plotFunction(); //Plot the function using scanFunction
   

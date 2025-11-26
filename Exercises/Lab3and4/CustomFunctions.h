@@ -1,7 +1,7 @@
-#pragma once
-
 #include <cmath>
 
-double normal(double x, double mean, double stdDev);
-double cauchyLorentz(double x, double gamma, double x_0);
-double crystalBall(double x, double mean, double stdDev, double n, double alpha);
+#pragma once
+
+double normal(double x, double norm_mean, double norm_sigma);
+double cauchyLorentz(double x, double cauchy_mean, double gamma);
+double crystalBall(double x, double cb_mean, double cb_sigma, double cb_n, double cb_alpha);
