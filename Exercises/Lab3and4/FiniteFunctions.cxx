@@ -17,11 +17,13 @@ FiniteFunction::FiniteFunction(){
 }
 
 //initialised constructor
-FiniteFunction::FiniteFunction(double range_min, double range_max, std::string outfile){
+FiniteFunction::FiniteFunction(double range_min, double range_max, std::string outfile, 
+                               std::function<double(double)> func) : m_callable(func){
   m_RMin = range_min;
   m_RMax = range_max;
   m_Integral = NULL;
   this->checkPath(outfile); //Use provided string to name output files
+  m_Integral = 0;
 }
 
 //Plots are called in the destructor
@@ -54,7 +56,12 @@ double FiniteFunction::rangeMax() {return m_RMax;};
 ###################
 */ 
 double FiniteFunction::invxsquared(double x) {return 1/(1+x*x);};
-double FiniteFunction::callFunction(double x) {return this->invxsquared(x);}; //(overridable)
+// If a callable was supplied use it, otherwise fallback to invxsquared
+double FiniteFunction::callFunction(double x) {
+    if (m_callable) return m_callable(x);
+    return this->invxsquared(x);
+}
+
 
 /*
 ###################
@@ -62,8 +69,35 @@ Integration by hand (output needed to normalise function when plotting)
 ###################
 */ 
 double FiniteFunction::integrate(int Ndiv){ //private
-  //ToDo write an integrator
-  return -99;  
+  // FiniteFunction::integral only passes positive integers so don't need to check this
+  // Use the trapezium method, trapezium rectagle width dx and height f(x) plus triangle height f(x+dx)-f(x)
+  // Trap area is f(x) * dx + 1/2 * dx* [f(x+dx)-f(x)] = 1/2 * dx * [f(x+dx)+f(x)]
+  // Total area is sum over i for 1/2 * dx * [f(x_i+1)+f(x_i)] where x_i = m_RMax + i * dx
+  // i.e. 1/2 * dx * [f(x_0) + 2f(x_1) + ... + 2f(x_Ndiv-1) + f(x_Ndiv)]
+  // equals dx * [1/2 * f(x_0) + f(x_1) + ... + f(x_Ndiv-1) + 1/2 *f(x_Ndiv)]
+  // i.e. the sum of every value, with first and last * 1/2
+  double unscaled_sum = 0.0; // initialise as zero
+  double dx = (m_RMax-m_RMin)/static_cast<double>(Ndiv); // width of each bin, converting int->double for safety
+
+  for (int i=0; i<=Ndiv; i++){ // Step through the bins
+    double x = m_RMin +i*dx;
+    double y = this->callFunction(x); // Get y-value at the x value
+
+    if (!std::isfinite(y)) {
+      std::cerr << "Warning: non-finite function value at x=" << x << " -> " << y << "\n";
+      // Option A: treat non-finite as 0
+      y = 0.0;
+      // Option B: return NaN to indicate failure:
+      // return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    if (i ==0 || i == Ndiv)
+      unscaled_sum += 0.5*y; // bins on the edge c
+    else
+      unscaled_sum += y;
+  }
+  double sum = unscaled_sum * dx; // Scale by bin width
+  return sum;  
 }
 double FiniteFunction::integral(int Ndiv) { //public
   if (Ndiv <= 0){
@@ -86,7 +120,7 @@ double FiniteFunction::integral(int Ndiv) { //public
 // Generate paths from user defined stem
 void FiniteFunction::checkPath(std::string outfile){
  path fp = outfile;
- m_FunctionName = fp.stem(); 
+ m_FunctionName = fp.stem();
  m_OutData = m_FunctionName+".data";
  m_OutPng = m_FunctionName+".png";
 }
@@ -147,7 +181,7 @@ std::vector< std::pair<double,double> > FiniteFunction::scanFunction(int Nscan){
   }
   //For each scan point push back the x and y values 
   for (int i = 0; i < Nscan; i++){
-    function_scan.push_back( std::make_pair(x,this->callFunction(x)/m_Integral));
+    function_scan.push_back(std::make_pair(x,this->callFunction(x)/m_Integral));
     x += step;
   }
   return function_scan;

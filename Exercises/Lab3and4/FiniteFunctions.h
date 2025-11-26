@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <functional>
 #include "gnuplot-iostream.h"
 
 #pragma once //Replacement for IFNDEF
@@ -8,7 +9,8 @@ class FiniteFunction{
 
 public:
   FiniteFunction(); //Empty constructor
-  FiniteFunction(double range_min, double range_max, std::string outfile); //Variable constructor
+  FiniteFunction(double range_min, double range_max, std::string outfile,
+                 std::function<double(double)> func = nullptr); //Variable constructor
   ~FiniteFunction(); //Destructor
   double rangeMin(); //Low end of the range the function is defined within
   double rangeMax(); //High end of the range the function is defined within
@@ -45,5 +47,6 @@ protected:
   void generatePlot(Gnuplot &gp); 
   
 private:
+  std::function<double(double)> m_callable;
   double invxsquared(double x); //The default functional form
 };
